@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.bruce-forte.old-theme-switcher",
+  "name": "Old Theme Switcher",
+  "version": "1.0.0",
+  "author": "bruce-forte",
+  "license": "Apache-2.0",
+  "description": "The pre-Quattro theme switcher: a textual theme list with a preview pane instead of the thumbnail grid.",
+  "kinds": [
+    "overlay"
+  ],
+  "entryPoints": {
+    "overlay": "Overlay.qml"
+  }
+}
