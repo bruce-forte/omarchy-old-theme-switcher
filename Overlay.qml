@@ -25,6 +25,13 @@ Item {
   property color selectedBackground: Color.menu.selectedBackground
   property color selectedText: Color.menu.selectedText
 
+  // themes.sh already bounds what it emits, but the overlay lives in the
+  // long-lived shell process, so it enforces the same limits itself rather than
+  // trusting its helper: an oversized payload is dropped instead of parsed, and
+  // only an absolute path is ever handed to the preview loader.
+  readonly property int maxPayloadChars: 4 * 1024 * 1024
+  readonly property int maxThemes: 500
+
   readonly property string pluginDir: String(Qt.resolvedUrl(".")).replace(/^file:\/\//, "").replace(/\/$/, "")
 
   readonly property var filtered: {
@@ -41,7 +48,11 @@ Item {
 
   readonly property var currentItem: (selectedIndex >= 0 && selectedIndex < filtered.length) ? filtered[selectedIndex] : null
   readonly property string currentName: currentItem ? String(currentItem.name) : ""
-  readonly property string currentPreview: currentItem ? String(currentItem.preview || "") : ""
+  readonly property string currentPreview: {
+    if (!currentItem) return ""
+    var path = String(currentItem.preview || "")
+    return path.charAt(0) === "/" ? path : ""
+  }
 
   onFilteredChanged: if (selectedIndex >= filtered.length) selectedIndex = Math.max(0, filtered.length - 1)
 
@@ -98,14 +109,22 @@ Item {
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
+        var raw = String(text || "")
+        if (raw.length > root.maxPayloadChars) {
+          console.warn("old-theme-switcher: theme list is " + raw.length
+                       + " chars, over the " + root.maxPayloadChars + " limit — ignoring it")
+          raw = ""
+        }
+
         var payload = {}
         try {
-          payload = JSON.parse(String(text || "{}")) || {}
+          payload = JSON.parse(raw || "{}") || {}
         } catch (e) {
           payload = {}
         }
 
-        root.themes = Array.isArray(payload.rows) ? payload.rows : []
+        var rows = Array.isArray(payload.rows) ? payload.rows : []
+        root.themes = rows.length > root.maxThemes ? rows.slice(0, root.maxThemes) : rows
         root.loaded = true
         root.selectedIndex = root.indexForName(String(payload.current || ""))
 
@@ -303,6 +322,11 @@ Item {
           // resolution: cropping a preview decoded to the pane's width had to
           // scale it back up to cover the pane's height, which is what made it
           // blurry. Mipmapping keeps the (always downward) scale clean.
+          //
+          // sourceSize caps the decode at pane resolution rather than the
+          // image's own, and asynchronous keeps the decode off the GUI thread,
+          // so a preview that is slow or impossible to decode ends as
+          // "No preview" instead of a frozen shell.
           Image {
             id: preview
 

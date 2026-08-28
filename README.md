@@ -257,9 +257,27 @@ Omarchy plugins run unsandboxed, with your user's permissions, inside the
 long-lived shell process. That applies to this one as much as to any other:
 read `Overlay.qml` and `themes.sh` before installing — both are short. The
 plugin spawns exactly two commands (`themes.sh`, which itself calls
-`omarchy-theme-list`, `find`, and `jq`; and `omarchy-theme-set`), reads nothing
-outside the theme directories described above, writes nothing, and makes no
-network calls.
+`omarchy-theme-list`, `find`, `realpath`, and `jq`; and `omarchy-theme-set`),
+reads nothing outside the theme directories described above, writes nothing, and
+makes no network calls.
+
+Themes themselves are installed from third-party repos, so their contents are
+treated as untrusted input and everything the overlay takes from them is
+bounded:
+
+| Bound | Value | Why |
+|-------|-------|-----|
+| Preview must resolve inside its own theme directory | — | A symlink in a theme cannot redirect the preview pane at a device node, a keypair, or an unbounded log. The theme directory may still itself be a symlink, so dev checkouts keep working |
+| Preview file size | 8 MiB | An oversized image is skipped rather than handed to the decoder |
+| Themes listed | 500 | Caps the JSON `themes.sh` produces and the model the overlay holds |
+| Theme name | 128 chars, no control characters | A control character would break the tab/newline framing `jq` reads |
+| Theme list payload | 4 Mi chars | The overlay drops an over-limit payload instead of parsing it |
+
+Decoding is bounded too: the preview `Image` sets `sourceSize` to the pane's
+device resolution, so a large image is decoded down rather than at its own size,
+and `asynchronous: true` keeps the decode off the GUI thread — a preview that is
+slow or impossible to decode shows as *No preview* instead of freezing the
+shell.
 
 ## License
 
