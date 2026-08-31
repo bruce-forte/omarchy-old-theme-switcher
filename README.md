@@ -3,6 +3,9 @@
 Restores the pre-Quattro theme switcher: a **textual list of theme names with a
 preview beside it**, instead of Quattro's fullscreen thumbnail carousel.
 
+Live on the Omarchy plugin marketplace:
+<https://plugins.omarchy.org/plugin.html?id=io.github.bruce-forte.old-theme-switcher>
+
 ![The Old Theme Switcher overlay: theme names on the left, the highlighted theme's preview on the right](preview.png)
 
 Type to filter, `Enter` applies. Nothing else on the system changes — the stock
@@ -32,6 +35,9 @@ outside this plugin's own directory is ever written.
 ```bash
 omarchy plugin add https://github.com/bruce-forte/omarchy-old-theme-switcher.git --enable
 ```
+
+Or install it from its
+[marketplace listing](https://plugins.omarchy.org/plugin.html?id=io.github.bruce-forte.old-theme-switcher).
 
 That clones the repo into
 `~/.config/omarchy/plugins/io.github.bruce-forte.old-theme-switcher/`, validates
@@ -222,8 +228,10 @@ journalctl --user -f | grep qml                    # QML errors and warnings
 object it already instantiated, so neither saving the file nor
 `omarchy-shell shell rescanPlugins` swaps the new QML in.
 
-To publish a change: commit, push, then submit or update the listing at the
-[Omarchy plugin marketplace](https://omarchyplugins.com/).
+To publish a change: commit, push, bump `version` in `manifest.json`, then
+refresh the [marketplace listing](https://plugins.omarchy.org/plugin.html?id=io.github.bruce-forte.old-theme-switcher).
+Installed users pick it up with
+`omarchy plugin update io.github.bruce-forte.old-theme-switcher`.
 
 ## Troubleshooting
 
